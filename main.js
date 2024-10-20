@@ -2,13 +2,43 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/Addons.js';
 import { clamp, randFloat, randInt } from 'three/src/math/MathUtils.js';
 import { AsciiEffect } from 'three/addons/effects/AsciiEffect.js';
+import {GUI} from 'lil-gui';
 
 // function randomInt(min, max){
 //      return Math.floor(Math.random() * (max-min+1)+min);
 // }
 
-const dotsAmount = 10;
-const maxDistance = 50.0;
+const scene = new THREE.Scene(); 
+
+const dotGeometry = new THREE.SphereGeometry(1); 
+const dotMaterial = new THREE.MeshBasicMaterial( { color: 0xffffff } ); 
+
+let dots = [];
+
+
+
+let connections = [];
+
+const settings = {
+     dotsAmount: 10,
+     dotTraversalRange: 100,
+     maxLineDistance: 50.0,
+     deleteConnections: function(){
+          console.log("should");
+          for(let i = 0; i < connections.length; i++){
+               scene.remove(connections[i].line);
+          }
+          connections = [];
+     }
+}
+
+const gui = new GUI();
+gui.add(settings, 'dotsAmount', 3, 10);
+gui.add(settings, 'dotTraversalRange', 30, 100);
+gui.add(settings, 'maxLineDistance', 30, 50);
+gui.add(settings, 'deleteConnections');
+
+
 
 class Connection{
      constructor(material, v1, v2){
@@ -23,10 +53,14 @@ class Connection{
 class Dot{
      constructor(geometry, material){
           this.mesh = new THREE.Mesh(geometry, material);
-          this.mesh.position.set(randInt(-100,100), randInt(-100,100), randInt(-100,100));
+
+          this.mesh.position.set(randInt(-settings.dotTraversalRange,settings.dotTraversalRange), 
+          randInt(-settings.dotTraversalRange,settings.dotTraversalRange), 
+          randInt(-settings.dotTraversalRange,settings.dotTraversalRange));
+
           this.timer = 0.0;
           this.cooldown = randFloat(0.2, 0.3);
-          this.setRandDestination();
+          this.destination = this.getRandPos();
           this.clock = new THREE.Clock();
      }
 
@@ -38,18 +72,20 @@ class Dot{
           else{
                this.timer = 0.0;
                this.cooldown = randFloat(0.3, 0.5);
-               this.setRandDestination();
+               this.destination = this.getRandPos();
           }
      }
-     setRandDestination(){
-          this.destination = new THREE.Vector3(randInt(-100,100), randInt(-100,100), randInt(-100,100));
+     getRandPos(){
+          return new THREE.Vector3(randInt(-settings.dotTraversalRange,settings.dotTraversalRange), 
+          randInt(-settings.dotTraversalRange,settings.dotTraversalRange), 
+          randInt(-settings.dotTraversalRange,settings.dotTraversalRange));
      }
 
 }
 
 
-const scene = new THREE.Scene(); 
 const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 ); 
+
 
 const renderer = new THREE.WebGLRenderer(); 
 // renderer.setClearColor(0xffffff);
@@ -70,33 +106,26 @@ document.body.appendChild( renderer.domElement );
 // const controls = new OrbitControls(camera, effect.domElement );
 const controls = new OrbitControls(camera, renderer.domElement );
 
-const geometry = new THREE.SphereGeometry(1); 
-const material = new THREE.MeshBasicMaterial( { color: 0xffffff } ); 
 
-let dots = [];
-for(let i = 0; i < dotsAmount; i++){
-     dots.push(new Dot(geometry, material));
+for(let i = 0; i < settings.dotsAmount; i++){
+     dots.push(new Dot(dotGeometry, dotMaterial));
      scene.add(dots[i].mesh);
 }
 
-camera.position.z = 80;
 
-let connections = [];
-
-
-
+camera.position.z = 300;
 
 function animate() {
-     for(let i = 0; i < dotsAmount; i++){
+     for(let i = 0; i < settings.dotsAmount; i++){
           dots[i].move();
      }
 
      
 
-     for(let i = 0; i < dotsAmount; i++){
-          for(let j = i+1; j < dotsAmount; j++){
+     for(let i = 0; i < settings.dotsAmount; i++){
+          for(let j = i+1; j < settings.dotsAmount; j++){
                let distance = dots[i].mesh.position.distanceTo(dots[j].mesh.position);
-               if(distance <= maxDistance){
+               if(distance <= settings.maxLineDistance){
                     let colorVal = Math.random();
                     // let colorVal = 0;
                     let lineMat = new THREE.LineBasicMaterial();
@@ -110,10 +139,7 @@ function animate() {
      
      // effect.render( scene, camera ); 
      renderer.render( scene, camera ); 
-     for(let i = 0; i < connections.length; i++){
-          // scene.remove(connections[i].line);
-     }
-     connections = [];
+     
 } 
 
 renderer.setAnimationLoop( animate );
