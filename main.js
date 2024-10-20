@@ -10,6 +10,27 @@ import {GUI} from 'lil-gui';
 
 const scene = new THREE.Scene(); 
 
+const renderer = new THREE.WebGLRenderer(); 
+
+// renderer.setClearColor(0xffffff);
+renderer.setSize( window.innerWidth, window.innerHeight ); 
+
+const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 ); 
+
+const controls = new OrbitControls(camera, renderer.domElement );
+// by default no ascii effect
+document.body.appendChild( renderer.domElement );
+
+controls.update();
+// const controls = new OrbitControls(camera, renderer.domElement );
+
+let effect = new AsciiEffect( renderer, ' .:-+*=%@#', { invert: true, alpha: true} );
+effect.setSize( window.innerWidth, window.innerHeight );
+effect.domElement.style.color = 'white';
+effect.domElement.style.backgroundColor = 'black';
+
+
+
 const dotGeometry = new THREE.SphereGeometry(5); 
 const dotMaterial = new THREE.MeshBasicMaterial( { color: 0xffffff } ); 
 
@@ -30,13 +51,12 @@ const settings = {
                scene.remove(connections[i].line);
           }
           connections = [];
-     }
+     },
+     toggleASCII: false,
      
 }
 
 function changeDotsAmount(value){
-     console.log("be");
-
      for(let i = 0; i < dots.length; i++){
           scene.remove(dots[i].mesh);
      }
@@ -60,6 +80,7 @@ function changeDotsAmount(value){
      // }
 }
 
+
 const gui = new GUI();
 gui.add(settings, 'dotsAmount', 3, 30, 1).onChange(value => changeDotsAmount(value));
 gui.add(settings, 'dotTraversalRange', 30, 100);
@@ -67,8 +88,22 @@ gui.add(settings, 'maxLineDistance', 15, 100);
 gui.add(settings, 'dotsSpeed', 0.05, 1);
 gui.add(settings, 'deleteConnectionAfterDistanceLimit');
 gui.add(settings, 'deleteConnections');
+gui.add(settings, 'toggleASCII').onChange(value => changeRender(value));
 
-
+function changeRender(isActive){
+     if(isActive){
+          // Special case: append effect.domElement, instead of renderer.domElement.
+          // AsciiEffect creates a custom domElement (a div container) where the ASCII elements are placed.
+          document.body.removeChild( renderer.domElement );
+          document.body.appendChild( effect.domElement );
+          controls = new OrbitControls(camera, effect.domElement );
+     }
+     else{
+          document.body.removeChild( effect.domElement );
+          document.body.appendChild( renderer.domElement );
+          controls = new OrbitControls(camera, effect.domElement );
+     }
+}
 
 class Connection{
      constructor(material, v1, v2){
@@ -114,28 +149,7 @@ class Dot{
 }
 
 
-const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 ); 
 
-
-const renderer = new THREE.WebGLRenderer(); 
-// renderer.setClearColor(0xffffff);
-renderer.setSize( window.innerWidth, window.innerHeight ); 
-
-let effect = new AsciiEffect( renderer, ' .:-+*=%@#', { invert: true, alpha: true} );
-effect.setSize( window.innerWidth, window.innerHeight );
-effect.domElement.style.color = 'white';
-effect.domElement.style.backgroundColor = 'black';
-
-// Special case: append effect.domElement, instead of renderer.domElement.
-// AsciiEffect creates a custom domElement (a div container) where the ASCII elements are placed.
-
-document.body.appendChild( effect.domElement );
-
-// document.body.appendChild( renderer.domElement );
-
-const controls = new OrbitControls(camera, effect.domElement );
-controls.update();
-// const controls = new OrbitControls(camera, renderer.domElement );
 document.addEventListener("keydown", onDocumentKeyDown, false);
 function onDocumentKeyDown(event) {
     var keyCode = event.which;
@@ -175,9 +189,12 @@ function animate() {
           }
      }
      
-     
-     effect.render( scene, camera ); 
-     // renderer.render( scene, camera ); 
+     if(settings.toggleASCII){
+          effect.render( scene, camera ); 
+     }
+     else{
+          renderer.render( scene, camera ); 
+     }
 
      if(settings.deleteConnectionAfterDistanceLimit){
           settings.deleteConnections();
