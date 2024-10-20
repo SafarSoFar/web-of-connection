@@ -22,20 +22,48 @@ let connections = [];
 const settings = {
      dotsAmount: 10,
      dotTraversalRange: 100,
-     maxLineDistance: 50.0,
+     maxLineDistance: 30.0,
+     dotsSpeed: 0.05,
      deleteConnections: function(){
-          console.log("should");
           for(let i = 0; i < connections.length; i++){
                scene.remove(connections[i].line);
           }
           connections = [];
      }
+     
+}
+
+function changeDotsAmount(value){
+     console.log("be");
+
+     for(let i = 0; i < dots.length; i++){
+          scene.remove(dots[i].mesh);
+     }
+     dots = [];
+
+     for(let i = 0; i < value; i++){
+          dots.push(new Dot(dotGeometry, dotMaterial));
+          scene.add(dots[i].mesh);
+     }
+     // if(value > settings.dotsAmount){
+     //      for(let i = settings.dotsAmount; i < value; i++){
+     //           dots.push(new Dot(dotGeometry, dotMaterial));
+     //           scene.add(dots[i].mesh);
+     //      }
+     // }
+     // else{
+     //      for(let i = settings.dotsAmount-1; i > value; i--){
+     //           scene.remove(dots[i].mesh);
+     //           dots.pop();
+     //      }
+     // }
 }
 
 const gui = new GUI();
-gui.add(settings, 'dotsAmount', 3, 10);
+gui.add(settings, 'dotsAmount', 3, 30, 1).onChange(value => changeDotsAmount(value));
 gui.add(settings, 'dotTraversalRange', 30, 100);
-gui.add(settings, 'maxLineDistance', 30, 50);
+gui.add(settings, 'maxLineDistance', 15, 100);
+gui.add(settings, 'dotsSpeed', 0.05, 1);
 gui.add(settings, 'deleteConnections');
 
 
