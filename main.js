@@ -30,14 +30,7 @@ effect.domElement.style.color = 'white';
 effect.domElement.style.backgroundColor = 'black';
 
 
-
-const dotGeometry = new THREE.SphereGeometry(5); 
-const dotMaterial = new THREE.MeshBasicMaterial( { color: 0xffffff } ); 
-
 let dots = [];
-
-
-
 let connections = [];
 
 const settings = {
@@ -45,6 +38,7 @@ const settings = {
      dotTraversalRange: 100,
      maxLineDistance: 30.0,
      dotsSpeed: 0.05,
+     dotsRadius: 2,
      deleteConnectionAfterDistanceLimit: false,
      deleteConnections: function(){
           for(let i = 0; i < connections.length; i++){
@@ -55,6 +49,9 @@ const settings = {
      toggleASCII: false,
      
 }
+
+let dotGeometry = new THREE.SphereGeometry(settings.dotsRadius); 
+let dotMaterial = new THREE.MeshBasicMaterial( { color: 0xffffff } ); 
 
 function changeDotsAmount(value){
      for(let i = 0; i < dots.length; i++){
@@ -86,9 +83,23 @@ gui.add(settings, 'dotsAmount', 3, 30, 1).onChange(value => changeDotsAmount(val
 gui.add(settings, 'dotTraversalRange', 30, 100);
 gui.add(settings, 'maxLineDistance', 15, 100);
 gui.add(settings, 'dotsSpeed', 0.05, 1);
+gui.add(settings, 'dotsRadius', 1, 5, 1).onChange(value => changeDotsRadius(value));
 gui.add(settings, 'deleteConnectionAfterDistanceLimit');
 gui.add(settings, 'deleteConnections');
 gui.add(settings, 'toggleASCII').onChange(value => changeRender(value));
+
+function changeDotsRadius(radius){
+     dotGeometry = new THREE.SphereGeometry(radius); 
+     for(let i = 0; i < settings.dotsAmount; i++){
+          scene.remove(dots[i].mesh);
+     }
+     dots = [];
+
+     for(let i = 0; i < settings.dotsAmount; i++){
+          dots.push(new Dot(dotGeometry, dotMaterial));
+          scene.add(dots[i].mesh);
+     }
+}
 
 function changeRender(isActive){
      if(isActive){
