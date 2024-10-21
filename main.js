@@ -32,6 +32,33 @@ effect.domElement.style.backgroundColor = 'black';
 
 let dots = [];
 let connections = [];
+let connectionIndex = 0;
+
+
+
+class Connection{
+     constructor(material, v1, v2){
+          this.points = [];
+          this.points.push(v1);
+          this.points.push(v2);
+          this.lineGeometry = new THREE.BufferGeometry().setFromPoints(this.points);
+          this.line= new THREE.Line(this.lineGeometry, material);
+     }
+     changeLineGeometry(v1, v2){
+          this.points = [];
+          this.points.push(v1);
+          this.points.push(v2);
+          this.lineGeometry = new THREE.BufferGeometry().setFromPoints(this.points);
+          this.line.geometry = this.lineGeometry;
+     }
+}
+let usualLineMat = new THREE.LineBasicMaterial();
+usualLineMat.color.setRGB(1, 1,1);
+for(let i =0; i < 300; i++){
+     let connection = new Connection(usualLineMat, new THREE.Vector3(0,0,0), new THREE.Vector3(0,0,0));
+     connections.push(connection);
+     scene.add(connection.line);
+}
 
 const settings = {
      dotsAmount: 10,
@@ -39,15 +66,25 @@ const settings = {
      maxLineDistance: 30.0,
      dotsSpeed: 0.05,
      dotsRadius: 2,
-     deleteConnectionAfterDistanceLimit: false,
-     deleteConnections: function(){
+     disableConnectionAfterDistanceLimit: false,
+     resetConnections: function(){
           for(let i = 0; i < connections.length; i++){
-               scene.remove(connections[i].line);
+               connections[i].changeLineGeometry(new THREE.Vector3(0,0,0), new THREE.Vector3(0,0,0));
           }
-          connections = [];
      },
      toggleASCII: false,
      
+}
+
+function showConnections(){
+     for(let i = 0; i < connections.length; i++){
+          connections[i].line.visible = true;
+     }
+}
+function hideConnections(){
+     for(let i = 0; i < connections.length; i++){
+          connections[i].line.visible = false;
+     }
 }
 
 let dotGeometry = new THREE.SphereGeometry(settings.dotsRadius); 
@@ -79,13 +116,13 @@ function changeDotsAmount(value){
 
 
 const gui = new GUI();
-gui.add(settings, 'dotsAmount', 3, 30, 1).onChange(value => changeDotsAmount(value));
+gui.add(settings, 'dotsAmount', 3, 100, 1).onChange(value => changeDotsAmount(value));
 gui.add(settings, 'dotTraversalRange', 30, 100);
 gui.add(settings, 'maxLineDistance', 15, 100);
 gui.add(settings, 'dotsSpeed', 0.05, 1);
 gui.add(settings, 'dotsRadius', 1, 5, 1).onChange(value => changeDotsRadius(value));
-gui.add(settings, 'deleteConnectionAfterDistanceLimit');
-gui.add(settings, 'deleteConnections');
+// gui.add(settings, 'disableConnectionAfterDistanceLimit');
+gui.add(settings, 'resetConnections');
 gui.add(settings, 'toggleASCII').onChange(value => changeRender(value));
 
 function changeDotsRadius(radius){
@@ -116,15 +153,9 @@ function changeRender(isActive){
      }
 }
 
-class Connection{
-     constructor(material, v1, v2){
-          this.points = [];
-          this.points.push(v1);
-          this.points.push(v2);
-          this.lineGeometry = new THREE.BufferGeometry().setFromPoints(this.points);
-          this.line= new THREE.Line(this.lineGeometry, material);
-     }
-}
+
+
+
 
 class Dot{
      constructor(geometry, material){
@@ -189,13 +220,15 @@ function animate() {
           for(let j = i+1; j < settings.dotsAmount; j++){
                let distance = dots[i].mesh.position.distanceTo(dots[j].mesh.position);
                if(distance <= settings.maxLineDistance){
-                    let colorVal = Math.random();
-                    // let colorVal = 0;
-                    let lineMat = new THREE.LineBasicMaterial();
-                    lineMat.color.setRGB(colorVal, colorVal,colorVal);
-                    let connection = new Connection(lineMat, dots[i].mesh.position, dots[j].mesh.position);
-                    connections.push(connection);
-                    scene.add(connection.line);
+                    // let colorVal = Math.random();
+              
+                    // let lineMat = new THREE.LineBasicMaterial();
+                    // lineMat.color.setRGB(colorVal, colorVal,colorVal);
+                    // let connection = new Connection(lineMat, dots[i].mesh.position, dots[j].mesh.position);
+                    // connections.push(connection);
+                    // scene.add(connection.line);
+                    connections[connectionIndex].changeLineGeometry(dots[i].mesh.position, dots[j].mesh.position);
+                    connectionIndex = connectionIndex >= 299 ? 0 : connectionIndex + 1;
                }
           }
      }
@@ -207,9 +240,9 @@ function animate() {
           renderer.render( scene, camera ); 
      }
 
-     if(settings.deleteConnectionAfterDistanceLimit){
-          settings.deleteConnections();
-     }
+     // if(settings.disableConnectionAfterDistanceLimit){
+     //      hideConnections();
+     // }
 } 
 
 renderer.setAnimationLoop( animate );
